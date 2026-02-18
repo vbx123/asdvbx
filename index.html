@@ -1,1 +1,105 @@
-0000
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زاد رمضان - الرئيسية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Amiri&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="light">
+
+    <header class="top-bar">
+        <button class="icon-btn" onclick="toggleTheme()">
+            <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+        <h1>زاد رمضان</h1>
+        <button class="icon-btn" onclick="window.location.href='support.html'">
+            <i class="fa-solid fa-headset"></i>
+        </button>
+    </header>
+
+    <section class="featured-slider" id="featured-box" onclick="goToDailyDetails()">
+        <div id="slider-container">
+            <p class="slider-title" id="content-title">الصلاة القادمة</p>
+            <p class="slider-content" id="content-body">جاري التحميل...</p>
+        </div>
+    </section>
+
+    <main class="home-grid">
+        <div class="category-box" onclick="window.location.href='quran.html'">
+            <i class="fa-solid fa-quran fa-2x" style="color: #27ae60;"></i>
+            <span>قرآن كريم</span>
+        </div>
+        <div class="category-box" onclick="window.location.href='stories.html'">
+            <i class="fa-solid fa-book-open fa-2x" style="color: #e67e22;"></i>
+            <span>قصص</span>
+        </div>
+        <div class="category-box" onclick="window.location.href='azkar.html'">
+            <i class="fa-solid fa-beads fa-2x" style="color: #9b59b6;"></i>
+            <span>أذكار</span>
+        </div>
+        <div class="category-box" onclick="window.location.href='dua.html'">
+            <i class="fa-solid fa-hands-praying fa-2x" style="color: #3498db;"></i>
+            <span>أدعية</span>
+        </div>
+        <div class="category-box" onclick="window.location.href='q-a.html'">
+            <i class="fa-solid fa-clipboard-question fa-2x" style="color: #e74c3c;"></i>
+            <span>أسئلة وأجوبة</span>
+        </div>
+        <div class="category-box" onclick="window.location.href='prayer-times.html'">
+            <i class="fa-solid fa-mosque fa-2x" style="color: #16a085;"></i>
+            <span>مواقيت الصلاة</span>
+        </div>
+        
+        <div class="more-btn category-box" onclick="window.location.href='more.html'">
+            <span>المزيد</span>
+        </div>
+    </main>
+
+    <script>
+        // 1. نظام تبديل النصوص في الصندوق العلوي
+        const contents = [
+            { title: "الصلاة القادمة", body: "العصر - بعد 02:15:10" },
+            { title: "آية اليوم", body: "﴿وَقُل رَبِّ زِدني عِلمًا﴾" },
+            { title: "حديث اليوم", body: "«خيركم من تعلم القرآن وعلمه»" }
+        ];
+        
+        let currentIndex = 0;
+        const titleEl = document.getElementById('content-title');
+        const bodyEl = document.getElementById('content-body');
+
+        function rotateContent() {
+            // إضافة تأثير اختفاء بسيط
+            document.getElementById('slider-container').style.opacity = 0;
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % contents.length;
+                titleEl.innerText = contents[currentIndex].title;
+                bodyEl.innerText = contents[currentIndex].body;
+                document.getElementById('slider-container').style.opacity = 1;
+            }, 500);
+        }
+
+        setInterval(rotateContent, 10000); // التبديل كل 10 ثوانٍ
+
+        // 2. نظام تغيير الثيم
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                icon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                icon.classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+
+        function goToDailyDetails() {
+            window.location.href = 'daily-details.html';
+        }
+    </script>
+</body>
+</html>
