@@ -1,1 +1,10 @@
-
+[
+  {
+    "category": "أذكار الصباح",
+    "file": "morning_azkar.json"
+  },
+  {
+    "category": "أذكار المساء",
+    "file": "evening_azkar.json"
+  }
+]
