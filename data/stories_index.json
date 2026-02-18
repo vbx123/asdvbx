@@ -1,1 +1,17 @@
-
+[
+  {
+    "category": "قصص الأنبياء",
+    "icon": "fa-dove",
+    "stories": [
+      { "title": "قصة آدم عليه السلام", "file": "adam.json" },
+      { "title": "قصة نوح عليه السلام", "file": "noah.json" }
+    ]
+  },
+  {
+    "category": "قصص الصحابة",
+    "icon": "fa-user-shield",
+    "stories": [
+      { "title": "أبو بكر الصديق", "file": "abu_bakr.json" }
+    ]
+  }
+]
