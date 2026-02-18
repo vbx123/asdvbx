@@ -1,1 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زاد رمضان - القصص</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .category-list, .titles-list { padding: 20px; display: grid; gap: 15px; }
+        .story-card { background: var(--card-bg); padding: 25px; border-radius: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .story-card i { color: var(--accent-color); font-size: 1.5rem; }
+        
+        .story-view { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        .story-view h2 { color: var(--accent-color); margin-bottom: 20px; text-align: center; }
+        .story-body { font-family: 'Amiri', serif; font-size: 1.4rem; line-height: 2; text-align: justify; background: var(--card-bg); padding: 20px; border-radius: 15px; }
+        
+        .back-btn { background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 10px; margin-bottom: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body data-theme="light">
 
+    <header class="top-bar">
+        <button class="icon-btn" onclick="handleBack()"><i class="fa-solid fa-arrow-right"></i></button>
+        <h1 id="page-title">قصص وعبر</h1>
+        <button class="icon-btn" onclick="window.location.href='support.html'"><i class="fa-solid fa-headset"></i></button>
+    </header>
+
+    <section id="categories-section" class="category-list">
+        </section>
+
+    <section id="titles-section" class="titles-list" style="display: none;">
+        <button class="back-btn" onclick="showCategories()"><i class="fa-solid fa-chevron-right"></i> عودة للأقسام</button>
+        <div id="titles-container"></div>
+    </section>
+
+    <section id="content-section" class="story-view">
+        <button class="back-btn" onclick="showTitles()"><i class="fa-solid fa-chevron-right"></i> عودة للعناوين</button>
+        <h2 id="story-title-display"></h2>
+        <div id="story-text" class="story-body"></div>
+    </section>
+
+    <script>
+        // مزامنة الثيم
+        document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+
+        let storiesData = []; // لتخزين بيانات الفهرس
+        let currentCategory = null;
+
+        // جلب الفهرس عند تحميل الصفحة
+        async function loadIndex() {
+            try {
+                const res = await fetch('data/stories_index.json');
+                storiesData = await res.json();
+                showCategories();
+            } catch (e) { console.error("خطأ في جلب البيانات"); }
+        }
+
+        function showCategories() {
+            document.getElementById('page-title').innerText = "أقسام القصص";
+            toggleSections('categories-section');
+            const container = document.getElementById('categories-section');
+            container.innerHTML = storiesData.map((cat, index) => `
+                <div class="story-card" onclick="showTitles(${index})">
+                    <i class="fa-solid ${cat.icon}"></i>
+                    <strong>${cat.category}</strong>
+                </div>
+            `).join('');
+        }
+
+        function showTitles(index) {
+            currentCategory = storiesData[index];
+            document.getElementById('page-title').innerText = currentCategory.category;
+            toggleSections('titles-section');
+            const container = document.getElementById('titles-container');
+            container.innerHTML = currentCategory.stories.map(s => `
+                <div class="story-card" onclick="loadStory('${s.file}', '${s.title}')">
+                    <i class="fa-solid fa-book-quran"></i>
+                    <span>${s.title}</span>
+                </div>
+            `).join('');
+        }
+
+        async function loadStory(fileName, title) {
+            toggleSections('content-section');
+            document.getElementById('story-title-display').innerText = title;
+            document.getElementById('story-text').innerText = "جاري التحميل...";
+            
+            try {
+                const res = await fetch(`data/stories/${fileName}`);
+                const data = await res.json();
+                document.getElementById('story-text').innerText = data.content;
+            } catch (e) {
+                document.getElementById('story-text').innerText = "عذراً، تعذر تحميل القصة.";
+            }
+        }
+
+        function toggleSections(activeId) {
+            ['categories-section', 'titles-section', 'content-section'].forEach(id => {
+                document.getElementById(id).style.display = (id === activeId) ? 'block' : 'none';
+            });
+        }
+
+        function handleBack() {
+            const content = document.getElementById('content-section');
+            const titles = document.getElementById('titles-section');
+            
+            if (content.style.display === 'block') showTitles(storiesData.indexOf(currentCategory));
+            else if (titles.style.display === 'block') showCategories();
+            else history.back();
+        }
+
+        loadIndex();
+    </script>
+</body>
+</html>
