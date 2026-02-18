@@ -1,1 +1,20 @@
-
+[
+  {
+    "id": 1,
+    "name": "مشاري راشد العفاسي",
+    "image": "https://server8.mp3quran.net/afs/R_afasi.jpg",
+    "server": "https://server8.mp3quran.net/afs/"
+  },
+  {
+    "id": 2,
+    "name": "عبد الباسط عبد الصمد",
+    "image": "https://server7.mp3quran.net/basit/Abdul_Basit_Abdul_Samad.jpg",
+    "server": "https://server7.mp3quran.net/basit/Murattal/"
+  },
+  {
+    "id": 3,
+    "name": "ياسر الدوسري",
+    "image": "https://server11.mp3quran.net/yasser/Yasser_Al-Dosari.jpg",
+    "server": "https://server11.mp3quran.net/yasser/"
+  }
+]
