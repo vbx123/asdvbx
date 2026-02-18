@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زاد رمضان - مواقيت الصلاة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root {
+            --prayer-active: #ffd700;
+        }
+
+        .prayer-hero {
+            background: linear-gradient(135deg, var(--accent-color), #2c3e50);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .next-prayer-title { font-size: 1.1rem; opacity: 0.9; }
+        .next-prayer-time { font-size: 3.5rem; font-weight: 900; margin: 10px 0; }
+        .countdown { font-size: 1.2rem; background: rgba(255,255,255,0.2); display: inline-block; padding: 5px 20px; border-radius: 20px; backdrop-filter: blur(5px); }
+
+        .location-info { margin-top: 15px; font-size: 0.9rem; }
+        .location-info i { margin-left: 5px; }
+
+        .prayers-list { padding: 0 20px; }
+        .prayer-card {
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .prayer-card.active {
+            border-color: var(--prayer-active);
+            transform: scale(1.02);
+            background: linear-gradient(to right, var(--card-bg), rgba(255, 215, 0, 0.05));
+        }
+
+        .prayer-name { display: flex; align-items: center; gap: 15px; font-weight: bold; font-size: 1.1rem; }
+        .prayer-name i { font-size: 1.4rem; color: var(--accent-color); width: 30px; text-align: center; }
+        .prayer-time { font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 1.2rem; }
+
+        .refresh-area { text-align: center; margin: 20px 0; }
+        .btn-location { background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <header class="top-bar" style="background: var(--accent-color); color: white; border: none;">
+        <button class="icon-btn" style="color: white;" onclick="history.back()"><i class="fa-solid fa-arrow-right"></i></button>
+        <h1>مواقيت الصلاة</h1>
+        <button class="icon-btn" style="color: white;" onclick="getLoc()"><i class="fa-solid fa-location-crosshairs"></i></button>
+    </header>
+
+    <div class="prayer-hero">
+        <div class="next-prayer-title" id="next-prayer-name">جاري التحديث...</div>
+        <div class="next-prayer-time" id="next-prayer-time">00:00</div>
+        <div class="countdown" id="timer">متبقي --:--:--</div>
+        <div class="location-info">
+            <i class="fa-solid fa-location-dot"></i> <span id="city-name">القاهرة، مصر</span>
+        </div>
+    </div>
+
+    <div class="prayers-list" id="prayers-container">
+        <div class="prayer-card" id="Fajr">
+            <div class="prayer-name"><i class="fa-solid fa-cloud-sun"></i> <span>الفجر</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+        <div class="prayer-card" id="Sunrise">
+            <div class="prayer-name"><i class="fa-solid fa-sun"></i> <span>الشروق</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+        <div class="prayer-card" id="Dhuhr">
+            <div class="prayer-name"><i class="fa-solid fa-sun"></i> <span>الظهر</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+        <div class="prayer-card" id="Asr">
+            <div class="prayer-name"><i class="fa-solid fa-cloud-sun"></i> <span>العصر</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+        <div class="prayer-card" id="Maghrib">
+            <div class="prayer-name"><i class="fa-solid fa-moon"></i> <span>المغرب</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+        <div class="prayer-card" id="Isha">
+            <div class="prayer-name"><i class="fa-solid fa-star-and-crescent"></i> <span>العشاء</span></div>
+            <div class="prayer-time">--:--</div>
+        </div>
+    </div>
+
+    <script>
+        document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+
+        const prayerNames = {
+            Fajr: "الفجر", Sunrise: "الشروق", Dhuhr: "الظهر", 
+            Asr: "العصر", Maghrib: "المغرب", Isha: "العشاء"
+        };
+
+        async function fetchPrayers(lat, lng) {
+            const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const timings = data.data.timings;
+            
+            updateUI(timings);
+        }
+
+        function updateUI(timings) {
+            for (let key in prayerNames) {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.querySelector('.prayer-time').innerText = timings[key];
+                }
+            }
+            calculateNextPrayer(timings);
+        }
+
+        function calculateNextPrayer(timings) {
+            const now = new Date();
+            let next = null;
+            let minDiff = Infinity;
+
+            for (let key in prayerNames) {
+                if (key === 'Sunrise') continue;
+
+                const [hours, minutes] = timings[key].split(':');
+                const pTime = new Date();
+                pTime.setHours(hours, minutes, 0);
+
+                if (pTime > now && (pTime - now) < minDiff) {
+                    minDiff = pTime - now;
+                    next = { name: prayerNames[key], time: timings[key], id: key, fullDate: pTime };
+                }
+            }
+
+            // إذا انتهت صلوات اليوم (بعد العشاء)، الصلاة القادمة هي فجر الغد
+            if (!next) {
+                next = { name: "الفجر", time: timings['Fajr'], id: 'Fajr' };
+            }
+
+            document.getElementById('next-prayer-name').innerText = "الصلاة القادمة: " + next.name;
+            document.getElementById('next-prayer-time').innerText = next.time;
+            
+            // تمييز الكارت النشط
+            document.querySelectorAll('.prayer-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(next.id).classList.add('active');
+
+            // عداد تنازلي بسيط
+            startTimer(next.fullDate);
+        }
+
+        function startTimer(targetDate) {
+            if (!targetDate) return;
+            setInterval(() => {
+                const now = new Date().getTime();
+                const diff = targetDate - now;
+                
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('timer').innerText = `متبقي ${h}:${m}:${s}`;
+            }, 1000);
+        }
+
+        function getLoc() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    fetchPrayers(pos.coords.latitude, pos.coords.longitude);
+                    document.getElementById('city-name').innerText = "موقعك الحالي";
+                });
+            }
+        }
+
+        // تشغيل افتراضي (القاهرة)
+        fetchPrayers(30.0444, 31.2357);
+    </script>
+</body>
+</html>
