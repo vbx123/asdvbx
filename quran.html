@@ -8,23 +8,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* تنسيق إضافي لصفحة القرآن */
         .quran-tabs { display: flex; gap: 10px; padding: 20px; }
-        .tab-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; background: var(--card-bg); color: var(--text-primary); cursor: pointer; font-weight: bold; }
+        .tab-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; background: var(--card-bg); color: var(--text-primary); cursor: pointer; font-weight: bold; transition: 0.3s; }
         .tab-btn.active { background: var(--accent-color); color: white; }
         
         .search-container { padding: 0 20px 10px; }
-        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
+        .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; background: var(--card-bg); color: var(--text-primary); }
         
-        .surah-list { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .surah-card { background: var(--card-bg); padding: 15px; border-radius: 10px; text-align: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .surah-list { padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .surah-card { background: var(--card-bg); padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         
-        .quran-content { padding: 20px; display: none; }
+        .quran-content { display: none; }
         .quran-content.active { display: block; }
 
-        /* مشغل الصوت السفلي */
-        .audio-controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .audio-controls input { flex: 1; }
+        .audio-player-bottom { position: fixed; bottom: 0; width: 100%; background: var(--card-bg); padding: 20px; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); transform: translateY(110%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; }
+        .audio-active { transform: translateY(0); }
+        
+        .quran-text { padding: 20px; text-align: center; font-family: 'Amiri', serif; line-height: 2.2; font-size: 1.5rem; }
+        .aya { cursor: pointer; padding: 2px; }
+        .aya:hover { background: rgba(39, 174, 96, 0.1); border-radius: 5px; }
     </style>
 </head>
 <body data-theme="light">
@@ -36,132 +38,166 @@
     </header>
 
     <div class="quran-tabs">
-        <button class="tab-btn active" onclick="switchTab('read')">قرآن مقروء</button>
-        <button class="tab-btn" onclick="switchTab('listen')">قرآن مسموع</button>
+        <button id="btn-read" class="tab-btn active" onclick="switchTab('read')">قرآن مقروء</button>
+        <button id="btn-listen" class="tab-btn" onclick="switchTab('listen')">قرآن مسموع</button>
     </div>
 
-    <div class="search-container">
+    <div class="search-container" id="search-area">
         <input type="text" id="searchSurah" class="search-box" placeholder="ابحث عن سورة..." onkeyup="filterSurahs()">
     </div>
 
     <section id="read-section" class="quran-content active">
-        <div id="surah-list-container" class="surah-list">
-            </div>
+        <div id="surah-list-read" class="surah-list"></div>
         <div id="surah-detail" style="display: none;">
-            <button onclick="backToSurahList()" class="tab-btn" style="margin-bottom: 20px;">عودة للقائمة</button>
+            <button onclick="backToReadList()" class="tab-btn" style="margin: 20px; width: 90%;">عودة للقائمة</button>
             <div id="surah-text-area" class="quran-text"></div>
         </div>
     </section>
 
     <section id="listen-section" class="quran-content">
-        <div id="reciters-list" class="home-grid">
-            </div>
+        <div id="reciters-list" class="home-grid"></div>
+        <div id="surah-list-audio" class="surah-list" style="display: none;"></div>
     </section>
 
     <div id="audio-player" class="audio-player-bottom">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="text-align: center; margin-bottom: 10px;">
             <strong id="playing-surah">اسم السورة</strong>
-            <button onclick="closePlayer()" style="background:none; border:none; color:red;"><i class="fa-solid fa-times"></i></button>
         </div>
-        <div class="audio-controls">
-            <span id="current-time">00:00</span>
-            <input type="range" id="seek-bar" value="0" max="100">
-            <span id="duration">00:00</span>
-        </div>
-        <audio id="main-audio" style="display: none;"></audio>
-        <div style="text-align: center; margin-top: 10px;">
-            <button class="icon-btn" onclick="toggleAudio()"><i class="fa-solid fa-play fa-2x" id="play-pause-icon"></i></button>
+        <audio id="main-audio" ontimeupdate="updateProgress()"></audio>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="current-time" style="font-size: 12px;">00:00</span>
+            <input type="range" id="seek-bar" value="0" style="flex:1;" onchange="seekAudio()">
+            <button class="icon-btn" onclick="toggleAudio()"><i class="fa-solid fa-play fa-xl" id="play-btn"></i></button>
+            <button class="icon-btn" onclick="closePlayer()" style="color:red;"><i class="fa-solid fa-xmark"></i></button>
         </div>
     </div>
 
     <script>
-        // --- 1. التبديل بين الأقسام ---
+        // --- مزامنة الثيم ---
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+        applySavedTheme();
+
+        let allSurahs = [];
+        let currentReciterServer = "";
+
+        // --- التبديل بين الأقسام ---
         function switchTab(tab) {
             document.querySelectorAll('.quran-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             
             if(tab === 'read') {
                 document.getElementById('read-section').classList.add('active');
-                event.target.classList.add('active');
+                document.getElementById('btn-read').classList.add('active');
+                document.getElementById('search-area').style.display = 'block';
             } else {
                 document.getElementById('listen-section').classList.add('active');
-                event.target.classList.add('active');
-                loadReciters(); // جلب القراء عند فتح القسم
+                document.getElementById('btn-listen').classList.add('active');
+                document.getElementById('search-area').style.display = 'none';
+                loadReciters();
             }
         }
 
-        // --- 2. نظام القرآن المقروء ---
+        // --- جلب السور (للمقروء) ---
         async function loadSurahs() {
             const res = await fetch('https://api.alquran.cloud/v1/surah');
             const data = await res.json();
-            const container = document.getElementById('surah-list-container');
-            container.innerHTML = data.data.map(s => `
-                <div class="surah-card" onclick="showSurahText(${s.number})">
+            allSurahs = data.data;
+            displaySurahs(allSurahs, 'surah-list-read', 'showSurahText');
+        }
+
+        function displaySurahs(list, containerId, clickFunc) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = list.map(s => `
+                <div class="surah-card" onclick="${clickFunc}(${s.number}, '${s.name}')">
                     <strong>${s.name}</strong>
-                    <p>${s.englishName}</p>
                 </div>
             `).join('');
         }
 
-        async function showSurahText(id) {
-            document.getElementById('surah-list-container').style.display = 'none';
+        async function showSurahText(id, name) {
+            document.getElementById('surah-list-read').style.display = 'none';
+            document.getElementById('search-area').style.display = 'none';
             document.getElementById('surah-detail').style.display = 'block';
             const res = await fetch(`https://api.alquran.cloud/v1/surah/${id}`);
             const data = await res.json();
-            const textArea = document.getElementById('surah-text-area');
-            textArea.innerHTML = data.data.ayahs.map(a => `
-                <span class="aya" onclick="alert('تفسير الآية: قريباً...')">${a.text} ﴿${a.numberInSurah}﴾</span>
-            `).join(' ');
+            document.getElementById('surah-text-area').innerHTML = data.data.ayahs.map(a => 
+                `<span class="aya" onclick="alert('تفسير آية ${a.numberInSurah}: قريباً')">${a.text} (${a.numberInSurah})</span>`
+            ).join(' ');
         }
 
-        function backToSurahList() {
-            document.getElementById('surah-list-container').style.display = 'grid';
+        function backToReadList() {
+            document.getElementById('surah-list-read').style.display = 'grid';
+            document.getElementById('search-area').style.display = 'block';
             document.getElementById('surah-detail').style.display = 'none';
         }
 
-        // --- 3. نظام القرآن المسموع ---
+        // --- جلب القراء (للمسموع) ---
         async function loadReciters() {
-            // ملاحظة: هنا سنفترض أن الملف في مجلد data
             const res = await fetch('data/reciters_data.json');
             const reciters = await res.json();
             const container = document.getElementById('reciters-list');
+            container.style.display = 'grid';
+            document.getElementById('surah-list-audio').style.display = 'none';
+            
             container.innerHTML = reciters.map(r => `
-                <div class="category-box" onclick="playAudio('${r.server}001.mp3', 'الفاتحة - ${r.name}')">
+                <div class="category-box" onclick="showReciterSurahs('${r.server}', '${r.name}')">
                     <img src="${r.image}" style="width:60px; height:60px; border-radius:50%; object-fit:cover;">
                     <span>${r.name}</span>
                 </div>
             `).join('');
         }
 
+        function showReciterSurahs(server, name) {
+            currentReciterServer = server;
+            document.getElementById('reciters-list').style.display = 'none';
+            const audioList = document.getElementById('surah-list-audio');
+            audioList.style.display = 'grid';
+            
+            audioList.innerHTML = `<button onclick="loadReciters()" class="tab-btn" style="grid-column: span 2;">العودة للقراء</button>` + 
+                allSurahs.map(s => {
+                    const num = s.number.toString().padStart(3, '0');
+                    return `<div class="surah-card" onclick="playAudio('${server}${num}.mp3', '${s.name} - ${name}')">
+                                <strong>${s.name}</strong>
+                            </div>`;
+                }).join('');
+        }
+
+        // --- مشغل الصوت ---
+        const audio = document.getElementById('main-audio');
         function playAudio(url, title) {
-            const player = document.getElementById('audio-player');
-            const audio = document.getElementById('main-audio');
             document.getElementById('playing-surah').innerText = title;
             audio.src = url;
             audio.play();
-            player.classList.add('audio-active');
-            document.getElementById('play-pause-icon').classList.replace('fa-play', 'fa-pause');
+            document.getElementById('audio-player').classList.add('audio-active');
+            document.getElementById('play-btn').classList.replace('fa-play', 'fa-pause');
         }
 
         function toggleAudio() {
-            const audio = document.getElementById('main-audio');
-            const icon = document.getElementById('play-pause-icon');
-            if (audio.paused) {
-                audio.play();
-                icon.classList.replace('fa-play', 'fa-pause');
-            } else {
-                audio.pause();
-                icon.classList.replace('fa-pause', 'fa-play');
-            }
+            if(audio.paused) { audio.play(); document.getElementById('play-btn').classList.replace('fa-play', 'fa-pause'); }
+            else { audio.pause(); document.getElementById('play-btn').classList.replace('fa-pause', 'fa-play'); }
+        }
+
+        function updateProgress() {
+            const seek = document.getElementById('seek-bar');
+            seek.value = (audio.currentTime / audio.duration) * 100 || 0;
+            const min = Math.floor(audio.currentTime / 60);
+            const sec = Math.floor(audio.currentTime % 60);
+            document.getElementById('current-time').innerText = `${min}:${sec < 10 ? '0'+sec : sec}`;
+        }
+
+        function seekAudio() {
+            audio.currentTime = (document.getElementById('seek-bar').value / 100) * audio.duration;
         }
 
         function closePlayer() {
             document.getElementById('audio-player').classList.remove('audio-active');
-            document.getElementById('main-audio').pause();
+            audio.pause();
         }
 
-        // تشغيل أولي
-        loadSurahs();
+        loadSurahs(); // تشغيل أولي لجلب قائمة السور
     </script>
 </body>
 </html>
