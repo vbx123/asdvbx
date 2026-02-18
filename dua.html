@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>زاد رمضان - الأدعية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .grid-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px; }
+        .menu-card { background: var(--card-bg); padding: 25px 15px; border-radius: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; }
+        .menu-card i { font-size: 2.2rem; color: var(--accent-color); }
+
+        .dua-container { padding: 15px; display: none; }
+        .dua-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .dua-text { font-family: 'Amiri', serif; font-size: 1.5rem; line-height: 1.8; color: var(--text-primary); }
+        
+        .share-btn {
+            margin-top: 15px;
+            background: none;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+        .share-btn:hover { background: var(--accent-color); color: white; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <header class="top-bar">
+        <button class="icon-btn" onclick="handleBack()"><i class="fa-solid fa-arrow-right"></i></button>
+        <h1 id="page-title">الأدعية</h1>
+        <div style="width: 40px;"></div>
+    </header>
+
+    <section id="dua-categories" class="grid-menu"></section>
+
+    <section id="dua-list" class="dua-container"></section>
+
+    <script>
+        // مزامنة الثيم
+        document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+
+        // 1. جلب الأقسام
+        async function loadDuaIndex() {
+            try {
+                const res = await fetch('data/dua_index.json');
+                const data = await res.json();
+                const container = document.getElementById('dua-categories');
+                container.innerHTML = data.map(item => `
+                    <div class="menu-card" onclick="loadDuaList('${item.file}', '${item.category}')">
+                        <i class="fa-solid ${item.icon}"></i>
+                        <strong>${item.category}</strong>
+                    </div>
+                `).join('');
+            } catch (e) { console.log("خطأ في تحميل الفهرس"); }
+        }
+
+        // 2. جلب قائمة الأدعية
+        async function loadDuaList(file, title) {
+            document.getElementById('page-title').innerText = title;
+            document.getElementById('dua-categories').style.display = 'none';
+            const listContainer = document.getElementById('dua-list');
+            listContainer.style.display = 'block';
+            
+            try {
+                const res = await fetch(`data/dua/${file}`);
+                const duas = await res.json();
+                listContainer.innerHTML = duas.map(d => `
+                    <div class="dua-card">
+                        <p class="dua-text">${d.text}</p>
+                        <button class="share-btn" onclick="shareDua('${d.text.replace(/'/g, "\\'")}')">
+                            <i class="fa-solid fa-share-nodes"></i> مشاركة
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) { console.log("خطأ في تحميل الأدعية"); }
+        }
+
+        // 3. وظيفة المشاركة
+        function shareDua(text) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'دعاء من تطبيق زاد رمضان',
+                    text: text,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert("تم نسخ الدعاء للنص!");
+            }
+        }
+
+        // 4. نظام الرجوع
+        function handleBack() {
+            const duaList = document.getElementById('dua-list');
+            if (duaList.style.display === 'block') {
+                duaList.style.display = 'none';
+                document.getElementById('dua-categories').style.display = 'grid';
+                document.getElementById('page-title').innerText = "الأدعية";
+            } else {
+                history.back();
+            }
+        }
+
+        loadDuaIndex();
+    </script>
+</body>
+</html>
