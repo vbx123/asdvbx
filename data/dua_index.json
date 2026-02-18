@@ -1,0 +1,12 @@
+[
+  {
+    "category": "أدعية قرآنية",
+    "file": "quran_dua.json",
+    "icon": "fa-book-quran"
+  },
+  {
+    "category": "أدعية نبوية",
+    "file": "prophet_dua.json",
+    "icon": "fa-mosque"
+  }
+]
