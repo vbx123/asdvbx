@@ -3,12 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>زاد رمضان - الأذكار</title>
+    <title>زاد رمضان - الأذكار والسبحة</title>
     <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .azkar-container { padding: 15px; }
+        /* نظام المربعات للأقسام */
+        .grid-menu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .menu-card {
+            background: var(--card-bg);
+            padding: 25px 15px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .menu-card:active { transform: scale(0.95); }
+        .menu-card i { font-size: 2.2rem; color: var(--accent-color); }
+
+        /* تصميم بطاقة الذكر (داخل القسم) */
+        .azkar-container { padding: 15px; display: none; }
         .zekr-card {
             background: var(--card-bg);
             border-radius: 20px;
@@ -16,74 +42,90 @@
             margin-bottom: 20px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: 0.3s;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
             border: 2px solid transparent;
+            transition: 0.3s;
         }
         .zekr-text { font-family: 'Amiri', serif; font-size: 1.4rem; line-height: 1.8; margin-bottom: 15px; }
-        .zekr-reward { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; font-style: italic; }
         
-        /* تصميم العداد الدائري */
-        .progress-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto;
-        }
+        /* العداد الدائري */
+        .progress-container { position: relative; width: 80px; height: 80px; margin: 0 auto; }
         .progress-ring { transform: rotate(-90deg); }
         .progress-ring__circle {
-            stroke-dasharray: 226.19; /* 2 * PI * r (r=36) */
+            stroke-dasharray: 226.19;
             stroke-dashoffset: 226.19;
-            transition: stroke-dashoffset 0.3s, stroke 0.3s;
+            transition: 0.3s;
             stroke-linecap: round;
         }
-        .count-number {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-            font-size: 1.2rem;
+        .count-number { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 1.2rem; }
+        .completed { border-color: var(--accent-color); opacity: 0.7; }
+
+        /* قسم السبحة الحرة */
+        #sebha-section { display: none; text-align: center; padding: 40px 20px; }
+        .sebha-circle {
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 10px solid var(--accent-color);
+            margin: 30px auto;
+            display: flex;
+            align-items: center; justify-content: center;
+            font-size: 3rem; font-weight: 900;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
         }
-        
-        .completed { border-color: var(--accent-color); opacity: 0.8; }
-        .completed .progress-ring__circle { stroke: #ffd700; filter: drop-shadow(0 0 5px #ffd700); }
+        .sebha-circle:active { transform: scale(0.9); }
     </style>
 </head>
 <body data-theme="light">
 
     <header class="top-bar">
         <button class="icon-btn" onclick="handleBack()"><i class="fa-solid fa-arrow-right"></i></button>
-        <h1 id="page-title">الأذكار</h1>
-        <button class="icon-btn" onclick="window.location.href='support.html'"><i class="fa-solid fa-headset"></i></button>
+        <h1 id="page-title">الأذكار والسبحة</h1>
+        <div style="width: 40px;"></div>
     </header>
 
-    <div id="azkar-sections" class="category-list"></div>
-    <div id="azkar-list" class="azkar-container" style="display: none;"></div>
+    <section id="main-menu" class="grid-menu">
+        <div class="menu-card" onclick="openSebha()">
+            <i class="fa-solid fa-fingerprint"></i>
+            <strong>سبحة إلكترونية</strong>
+        </div>
+        <div id="dynamic-categories" style="display: contents;"></div>
+    </section>
+
+    <section id="azkar-list" class="azkar-container"></section>
+
+    <section id="sebha-section">
+        <div class="sebha-circle" onclick="tallySebha()" id="sebha-display">0</div>
+        <p>اضغط على الدائرة للتسبيح</p>
+        <button class="tab-btn" onclick="resetSebha()" style="margin-top: 30px; background: #e74c3c; color:white;">تصفير العداد</button>
+    </section>
 
     <script>
         // مزامنة الثيم
         document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
 
-        let azkarIndex = [];
+        let currentSebhaCount = parseInt(localStorage.getItem('free-sebha')) || 0;
 
+        // 1. جلب أقسام الأذكار من الـ JSON
         async function loadAzkarIndex() {
-            const res = await fetch('data/azkar_index.json');
-            azkarIndex = await res.json();
-            const container = document.getElementById('azkar-sections');
-            container.innerHTML = azkarIndex.map((item, index) => `
-                <div class="story-card" onclick="loadAzkarList('${item.file}', '${item.category}')">
-                    <i class="fa-solid fa-beads"></i>
-                    <strong>${item.category}</strong>
-                </div>
-            `).join('');
+            try {
+                const res = await fetch('data/azkar_index.json');
+                const data = await res.json();
+                const container = document.getElementById('dynamic-categories');
+                container.innerHTML = data.map(item => `
+                    <div class="menu-card" onclick="loadAzkarList('${item.file}', '${item.category}')">
+                        <i class="fa-solid fa-beads"></i>
+                        <strong>${item.category}</strong>
+                    </div>
+                `).join('');
+            } catch (e) { console.log("تأكد من وجود ملف data/azkar_index.json"); }
         }
 
+        // 2. عرض أذكار القسم المختار
         async function loadAzkarList(file, title) {
             document.getElementById('page-title').innerText = title;
-            document.getElementById('azkar-sections').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'none';
             const listContainer = document.getElementById('azkar-list');
             listContainer.style.display = 'block';
             
@@ -91,12 +133,11 @@
             const azkar = await res.json();
             
             listContainer.innerHTML = azkar.map((z, i) => `
-                <div class="zekr-card" id="card-${i}" onclick="updateCount(${i}, ${z.count})">
+                <div class="zekr-card" id="card-${i}" onclick="updateZekrCount(${i}, ${z.count})">
                     <p class="zekr-text">${z.text}</p>
-                    ${z.reward ? `<p class="zekr-reward">${z.reward}</p>` : ''}
                     <div class="progress-container">
                         <svg class="progress-ring" width="80" height="80">
-                            <circle class="progress-ring__bg" stroke="#e6e6e6" stroke-width="6" fill="transparent" r="36" cx="40" cy="40"/>
+                            <circle stroke="#e6e6e6" stroke-width="6" fill="transparent" r="36" cx="40" cy="40"/>
                             <circle class="progress-ring__circle" id="circle-${i}" stroke="var(--accent-color)" stroke-width="6" fill="transparent" r="36" cx="40" cy="40"/>
                         </svg>
                         <span class="count-number" id="num-${i}">${z.count}</span>
@@ -105,7 +146,7 @@
             `).join('');
         }
 
-        function updateCount(id, max) {
+        function updateZekrCount(id, max) {
             const numEl = document.getElementById(`num-${id}`);
             const circle = document.getElementById(`circle-${id}`);
             const card = document.getElementById(`card-${id}`);
@@ -114,29 +155,46 @@
             if (current > 0) {
                 current--;
                 numEl.innerText = current;
-                
-                // حساب التقدم الدائري
-                const radius = 36;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - ((max - current) / max) * circumference;
+                const offset = 226.19 - ((max - current) / max) * 226.19;
                 circle.style.strokeDashoffset = offset;
-
-                // تأثير الهزة عند النقر (Haptic feedback)
-                if(window.navigator.vibrate) window.navigator.vibrate(50);
-
-                if (current === 0) {
-                    card.classList.add('completed');
-                    circle.style.stroke = "#27ae60";
-                    // صوت خفيف أو تنبيه عند الانتهاء يمكن إضافته هنا
-                }
+                if(window.navigator.vibrate) window.navigator.vibrate(40);
+                if (current === 0) card.classList.add('completed');
             }
         }
 
+        // 3. نظام السبحة الحرة
+        function openSebha() {
+            document.getElementById('page-title').innerText = "السبحة الإلكترونية";
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('sebha-section').style.display = 'block';
+            document.getElementById('sebha-display').innerText = currentSebhaCount;
+        }
+
+        function tallySebha() {
+            currentSebhaCount++;
+            document.getElementById('sebha-display').innerText = currentSebhaCount;
+            localStorage.setItem('free-sebha', currentSebhaCount);
+            if(window.navigator.vibrate) window.navigator.vibrate(50);
+        }
+
+        function resetSebha() {
+            if(confirm("هل تريد تصفير السبحة؟")) {
+                currentSebhaCount = 0;
+                document.getElementById('sebha-display').innerText = 0;
+                localStorage.setItem('free-sebha', 0);
+            }
+        }
+
+        // 4. التحكم في زر الرجوع
         function handleBack() {
-            if (document.getElementById('azkar-list').style.display === 'block') {
-                document.getElementById('azkar-list').style.display = 'none';
-                document.getElementById('azkar-sections').style.display = 'grid';
-                document.getElementById('page-title').innerText = "الأذكار";
+            const azkarList = document.getElementById('azkar-list');
+            const sebhaSec = document.getElementById('sebha-section');
+            
+            if (azkarList.style.display === 'block' || sebhaSec.style.display === 'block') {
+                azkarList.style.display = 'none';
+                sebhaSec.style.display = 'none';
+                document.getElementById('main-menu').style.display = 'grid';
+                document.getElementById('page-title').innerText = "الأذكار والسبحة";
             } else {
                 history.back();
             }
