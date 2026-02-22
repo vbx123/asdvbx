@@ -1,15 +1,10 @@
 [
     {
         "category": "أذكار الصباح",
-        "file": "morning_azkar.json"
-    },
-    {
-        "category": "أذكار المساء",
-        "file": "evening_azkar.json"
+        "file": "azkar_alsba7.json"
     },
     {
         "category": "اذكار المساء",
-        "file": "dhkr_lms.json",
-        "icon": "fa-star"
+        "file": "dhkr_lms.json"
     }
 ]
