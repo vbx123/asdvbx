@@ -24,7 +24,12 @@
             {
                 "title": "أبو بكر الصديق",
                 "file": "abu_bakr.json"
+            },
+            {
+                "title": "أبو بكر",
+                "file": "abu_bakr.json"
             }
+            
         ]
     }
 ]
